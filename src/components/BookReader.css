@@ -1,0 +1,336 @@
+/* ─────────────────────────────────────────
+   Reader shell
+───────────────────────────────────────── */
+.reader {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--color-surface);
+}
+
+/* ─────────────────────────────────────────
+   Progress bar — sticky
+───────────────────────────────────────── */
+.reader__progress {
+  height: 3px;
+  flex-shrink: 0;
+  background: var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.reader__progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ─────────────────────────────────────────
+   Stage + book page-flip animation
+───────────────────────────────────────── */
+.reader__stage {
+  flex: 1;
+  position: relative;
+}
+
+/* Shadow overlay — simulates page edge shadow during flip */
+.reader__stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+}
+
+/* Next: page arrives from right edge (RTL leading edge) */
+.reader__stage--next {
+  transform-origin: right center;
+  animation: flipInNext 500ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.reader__stage--next::before {
+  background: linear-gradient(to left, rgba(0,0,0,0.13) 0%, transparent 35%);
+  animation: shadowFadeNext 500ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Prev: page arrives from left edge */
+.reader__stage--prev {
+  transform-origin: left center;
+  animation: flipInPrev 500ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.reader__stage--prev::before {
+  background: linear-gradient(to right, rgba(0,0,0,0.13) 0%, transparent 35%);
+  animation: shadowFadePrev 500ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes flipInNext {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) rotateY(9deg) translateX(3%);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1400px) rotateY(0deg) translateX(0);
+  }
+}
+
+@keyframes flipInPrev {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) rotateY(-9deg) translateX(-3%);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1400px) rotateY(0deg) translateX(0);
+  }
+}
+
+@keyframes shadowFadeNext {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes shadowFadePrev {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ─────────────────────────────────────────
+   Chapter page
+───────────────────────────────────────── */
+.chapter-page {
+  background: var(--color-surface);
+  width: 100%;
+}
+
+.chapter-page__scroll {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Header */
+.chapter-page__header {
+  margin-bottom: 1.4rem;
+}
+
+.chapter-page__label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.chapter-page__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.2rem, 2.6vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-text-primary);
+  margin: 0 0 0.3rem;
+}
+
+.chapter-page__subtitle {
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  font-weight: 300;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.7rem;
+}
+
+.chapter-page__divider {
+  width: 2.5rem;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  margin-right: auto;
+}
+
+/* Image */
+.chapter-page__figure {
+  margin: 0 0 1.6rem;
+  text-align: center;
+}
+
+.chapter-page__image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+
+/* Two images side by side */
+.chapter-page__figure--duo {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.chapter-page__figure--duo .chapter-page__image {
+  flex: 1;
+  width: 0;           /* flex sizing takes over */
+  max-height: 45vh;
+}
+
+.chapter-page__caption {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  margin-top: 0.4rem;
+  width: 100%;
+  text-align: center;
+}
+
+/* Body */
+.chapter-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.chapter-page__paragraph {
+  font-size: 1.1rem;
+  line-height: 1.85;
+  color: var(--color-text-body);
+  margin: 0;
+}
+
+/* Footer */
+.chapter-page__footer {
+  margin-top: 2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────
+   Navigation — sticky bottom
+───────────────────────────────────────── */
+.reader__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+  gap: 1rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.reader__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 5rem;
+  justify-content: center;
+  transition: color 0.22s, border-color 0.22s, background 0.22s,
+              transform 0.18s, box-shadow 0.22s;
+}
+
+.reader__btn:hover:not(:disabled) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: rgba(79, 70, 229, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.12);
+}
+
+.reader__btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.reader__btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.reader__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.reader__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background 0.22s, transform 0.22s;
+}
+
+.reader__dot:hover {
+  background: var(--color-accent-light);
+  transform: scale(1.3);
+}
+
+.reader__dot--active {
+  background: var(--color-accent);
+  transform: scale(1.4);
+}
+
+/* ─────────────────────────────────────────
+   Mobile
+───────────────────────────────────────── */
+@media (max-width: 480px) {
+  .reader__nav { padding: 0.5rem 0.75rem; }
+
+  .reader__btn span { display: none; }
+  .reader__btn { min-width: auto; padding: 0.4rem 0.6rem; }
+
+  .chapter-page__image { max-height: 38vh; }
+  .chapter-page__figure--duo { flex-direction: column; }
+  .chapter-page__figure--duo .chapter-page__image { width: 100%; flex: unset; }
+  .chapter-page__paragraph { font-size: 1rem; }
+
+  @keyframes flipInNext {
+    0%   { opacity: 0; transform: perspective(600px) rotateY(5deg) translateX(2%); }
+    100% { opacity: 1; transform: perspective(600px) rotateY(0deg) translateX(0);  }
+  }
+  @keyframes flipInPrev {
+    0%   { opacity: 0; transform: perspective(600px) rotateY(-5deg) translateX(-2%); }
+    100% { opacity: 1; transform: perspective(600px) rotateY(0deg)  translateX(0);   }
+  }
+}
