@@ -76,27 +76,31 @@ export function FlipBookReader() {
   const progress = ((currentPage + 1) / chapters.length) * 100;
 
   // ── Navigation ──
-  const goNext = useCallback(() => {
-    bookRef.current?.pageFlip()?.flipNext();
+  const handleNext = useCallback((e) => {
+    e?.preventDefault();
+    if (bookRef.current) bookRef.current.pageFlip().flipNext();
   }, []);
 
-  const goPrev = useCallback(() => {
-    bookRef.current?.pageFlip()?.flipPrev();
+  const handlePrev = useCallback((e) => {
+    e?.preventDefault();
+    if (bookRef.current) bookRef.current.pageFlip().flipPrev();
   }, []);
 
-  const goTo = useCallback((i) => {
-    bookRef.current?.pageFlip()?.flip(i);
+  const handleGoTo = useCallback((e, i) => {
+    e?.preventDefault();
+    if (bookRef.current) bookRef.current.pageFlip().flip(i);
   }, []);
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowRight') goNext();   // LTR: right = forward
-      if (e.key === 'ArrowLeft')  goPrev();   // LTR: left  = back
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft')  handlePrev();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev]);
+  }, [handleNext, handlePrev]);
 
+  // onFlip is the single source of truth for currentPage
   const onFlip = useCallback((e) => {
     setCurrentPage(e.data);
   }, []);
@@ -149,7 +153,7 @@ export function FlipBookReader() {
       <nav className="fp-reader__nav" dir="ltr">
         <button
           className="fp-btn"
-          onClick={goPrev}
+          onMouseDown={handlePrev}
           disabled={currentPage === 0}
           aria-label="פרק קודם"
         >
@@ -161,7 +165,7 @@ export function FlipBookReader() {
             <li key={ch.id}>
               <button
                 className={`fp-dot${i === currentPage ? ' fp-dot--active' : ''}`}
-                onClick={() => goTo(i)}
+                onMouseDown={(e) => handleGoTo(e, i)}
                 aria-label={`פרק ${i + 1}`}
               />
             </li>
@@ -170,7 +174,7 @@ export function FlipBookReader() {
 
         <button
           className="fp-btn"
-          onClick={goNext}
+          onMouseDown={handleNext}
           disabled={currentPage === chapters.length - 1}
           aria-label="פרק הבא"
         >
