@@ -3,30 +3,48 @@ import chaptersData from '../data/chapters.json';
 import './FlipBookReader.css';
 
 const chapters = chaptersData;
+const FLIP_MS = 480;
 
 // ─── FlipBookReader — CSS-animated page flip, no react-pageflip ──────────────
 export function FlipBookReader() {
   const [currentPage, setCurrentPage] = useState(0);
-  const [flipDir, setFlipDir] = useState('next'); // 'next' | 'prev'
+  const [flipDir, setFlipDir] = useState(null);     // 'next' | 'prev' | null
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const progress = ((currentPage + 1) / chapters.length) * 100;
 
   const goNext = useCallback(() => {
-    if (currentPage >= chapters.length - 1) return;
+    if (currentPage >= chapters.length - 1 || isAnimating) return;
+    setIsAnimating(true);
     setFlipDir('next');
-    setCurrentPage(p => p + 1);
-  }, [currentPage]);
+    setTimeout(() => {
+      setCurrentPage(p => Math.min(p + 1, chapters.length - 1));
+      setIsAnimating(false);
+      setFlipDir(null);
+    }, FLIP_MS);
+  }, [currentPage, isAnimating]);
 
   const goPrev = useCallback(() => {
-    if (currentPage <= 0) return;
+    if (currentPage <= 0 || isAnimating) return;
+    setIsAnimating(true);
     setFlipDir('prev');
-    setCurrentPage(p => p - 1);
-  }, [currentPage]);
+    setTimeout(() => {
+      setCurrentPage(p => Math.max(p - 1, 0));
+      setIsAnimating(false);
+      setFlipDir(null);
+    }, FLIP_MS);
+  }, [currentPage, isAnimating]);
 
-  const goTo = useCallback((i, current) => {
-    setFlipDir(i > current ? 'next' : 'prev');
-    setCurrentPage(i);
-  }, []);
+  const goTo = useCallback((i) => {
+    if (isAnimating || i === currentPage) return;
+    setIsAnimating(true);
+    setFlipDir(i > currentPage ? 'next' : 'prev');
+    setTimeout(() => {
+      setCurrentPage(i);
+      setIsAnimating(false);
+      setFlipDir(null);
+    }, FLIP_MS);
+  }, [currentPage, isAnimating]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -48,13 +66,10 @@ export function FlipBookReader() {
         <div className="fp-reader__progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Book area */}
+      {/* Book area — stage stays mounted, key on inner content only */}
       <div className="fp-reader__wrap">
-        <div
-          key={currentPage}
-          className={`fp-stage fp-stage--${flipDir}`}
-        >
-          <div className="fp-page__scroll" dir="rtl">
+        <div className={`fp-stage${flipDir ? ` fp-stage--${flipDir}` : ''}`}>
+          <div key={currentPage} className="fp-page__scroll" dir="rtl">
 
             <header className="fp-page__header">
               <span className="fp-page__label">פרק {currentPage + 1} מתוך {chapters.length}</span>
@@ -96,7 +111,7 @@ export function FlipBookReader() {
         <button
           className="fp-btn"
           onClick={goPrev}
-          disabled={currentPage === 0}
+          disabled={currentPage === 0 || isAnimating}
           aria-label="פרק קודם"
         >
           ← קודם
@@ -107,7 +122,7 @@ export function FlipBookReader() {
             <li key={ch.id}>
               <button
                 className={`fp-dot${i === currentPage ? ' fp-dot--active' : ''}`}
-                onClick={() => goTo(i, currentPage)}
+                onClick={() => goTo(i)}
                 aria-label={`פרק ${i + 1}`}
               />
             </li>
@@ -117,7 +132,7 @@ export function FlipBookReader() {
         <button
           className="fp-btn"
           onClick={goNext}
-          disabled={currentPage === chapters.length - 1}
+          disabled={currentPage === chapters.length - 1 || isAnimating}
           aria-label="פרק הבא"
         >
           הבא →
