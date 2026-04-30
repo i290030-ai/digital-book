@@ -1,112 +1,46 @@
-import React, { useState, useRef, useLayoutEffect, useCallback, useEffect } from 'react';
-import HTMLFlipBook from 'react-pageflip';
+import { useState, useCallback, useEffect } from 'react';
 import chaptersData from '../data/chapters.json';
 import './FlipBookReader.css';
 
 const chapters = chaptersData;
 
-// ─── Single page — LTR wrapper, RTL text content ─────────────────────────────
-const Page = React.forwardRef(function Page({ chapter, index, total }, ref) {
-  const images = chapter.images ?? (chapter.image ? [chapter.image] : []);
-
-  return (
-    // outer div: LTR (required for react-pageflip orientation)
-    <div ref={ref} className="fp-page">
-      {/* inner scroll: RTL for Hebrew content */}
-      <div className="fp-page__scroll" dir="rtl">
-
-        <header className="fp-page__header">
-          <span className="fp-page__label">פרק {index + 1} מתוך {total}</span>
-          <h1 className="fp-page__title">{chapter.title}</h1>
-          {chapter.subtitle && (
-            <h2 className="fp-page__subtitle">{chapter.subtitle}</h2>
-          )}
-          <div className="fp-page__divider" />
-        </header>
-
-        {images.length > 0 && (
-          <div className="fp-page__images">
-            {images.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt={chapter.imageAlt ?? ''}
-                className="fp-page__image"
-                loading="lazy"
-                draggable={false}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="fp-page__body">
-          {chapter.body.split('\n\n').map((para, i) => (
-            <p key={i} className="fp-page__paragraph">{para}</p>
-          ))}
-        </div>
-
-        <footer className="fp-page__footer">{index + 1} / {total}</footer>
-      </div>
-    </div>
-  );
-});
-
-// ─── FlipBookReader ───────────────────────────────────────────────────────────
+// ─── FlipBookReader — CSS-animated page flip, no react-pageflip ──────────────
 export function FlipBookReader() {
   const [currentPage, setCurrentPage] = useState(0);
-  const bookRef = useRef(null);
-  const wrapRef = useRef(null);
-  const [dims, setDims] = useState({ width: 500, height: 680 });
-
-  useLayoutEffect(() => {
-    const compute = () => {
-      if (!wrapRef.current) return;
-      const { width, height } = wrapRef.current.getBoundingClientRect();
-      setDims({
-        width:  Math.floor(Math.min(width  - 4, 700)),
-        height: Math.floor(Math.max(height - 4, 400)),
-      });
-    };
-    compute();
-    const ro = new ResizeObserver(compute);
-    if (wrapRef.current) ro.observe(wrapRef.current);
-    return () => ro.disconnect();
-  }, []);
+  const [flipDir, setFlipDir] = useState('next'); // 'next' | 'prev'
 
   const progress = ((currentPage + 1) / chapters.length) * 100;
 
-  // ── Navigation ──
-  const handleNext = useCallback((e) => {
-    e?.preventDefault();
-    if (bookRef.current) bookRef.current.pageFlip().flipNext();
-  }, []);
+  const goNext = useCallback(() => {
+    if (currentPage >= chapters.length - 1) return;
+    setFlipDir('next');
+    setCurrentPage(p => p + 1);
+  }, [currentPage]);
 
-  const handlePrev = useCallback((e) => {
-    e?.preventDefault();
-    if (bookRef.current) bookRef.current.pageFlip().flipPrev();
-  }, []);
+  const goPrev = useCallback(() => {
+    if (currentPage <= 0) return;
+    setFlipDir('prev');
+    setCurrentPage(p => p - 1);
+  }, [currentPage]);
 
-  const handleGoTo = useCallback((e, i) => {
-    e?.preventDefault();
-    if (bookRef.current) bookRef.current.pageFlip().flip(i);
+  const goTo = useCallback((i, current) => {
+    setFlipDir(i > current ? 'next' : 'prev');
+    setCurrentPage(i);
   }, []);
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowRight') handleNext();
-      if (e.key === 'ArrowLeft')  handlePrev();
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft')  goPrev();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleNext, handlePrev]);
+  }, [goNext, goPrev]);
 
-  // onFlip is the single source of truth for currentPage
-  const onFlip = useCallback((e) => {
-    setCurrentPage(e.data);
-  }, []);
+  const chapter = chapters[currentPage];
+  const images = chapter.images ?? (chapter.image ? [chapter.image] : []);
 
   return (
-    // Book container: LTR so react-pageflip orientation is correct
     <div className="fp-reader" dir="ltr">
 
       {/* Progress */}
@@ -114,46 +48,54 @@ export function FlipBookReader() {
         <div className="fp-reader__progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Flip book */}
-      <div className="fp-reader__wrap" ref={wrapRef}>
-        <HTMLFlipBook
-          ref={bookRef}
-          width={dims.width}
-          height={dims.height}
-          size="fixed"
-          minWidth={280}
-          maxWidth={700}
-          minHeight={400}
-          maxHeight={1100}
-          drawShadow={true}
-          flippingTime={700}
-          usePortrait={true}
-          startZIndex={1}
-          autoSize={false}
-          maxShadowOpacity={0.4}
-          showCover={false}
-          mobileScrollSupport={true}
-          clickEventForward={true}
-          useMouseEvents={true}
-          swipeDistance={40}
-          showPageCorners={true}
-          disableFlipByClick={true}
-          startPage={0}
-          className="fp-flipbook"
-          style={{ margin: '0 auto' }}
-          onFlip={onFlip}
+      {/* Book area */}
+      <div className="fp-reader__wrap">
+        <div
+          key={currentPage}
+          className={`fp-stage fp-stage--${flipDir}`}
         >
-          {chapters.map((ch, i) => (
-            <Page key={ch.id} chapter={ch} index={i} total={chapters.length} />
-          ))}
-        </HTMLFlipBook>
+          <div className="fp-page__scroll" dir="rtl">
+
+            <header className="fp-page__header">
+              <span className="fp-page__label">פרק {currentPage + 1} מתוך {chapters.length}</span>
+              <h1 className="fp-page__title">{chapter.title}</h1>
+              {chapter.subtitle && (
+                <h2 className="fp-page__subtitle">{chapter.subtitle}</h2>
+              )}
+              <div className="fp-page__divider" />
+            </header>
+
+            {images.length > 0 && (
+              <div className="fp-page__images">
+                {images.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={chapter.imageAlt ?? ''}
+                    className="fp-page__image"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="fp-page__body">
+              {chapter.body.split('\n\n').map((para, i) => (
+                <p key={i} className="fp-page__paragraph">{para}</p>
+              ))}
+            </div>
+
+            <footer className="fp-page__footer">{currentPage + 1} / {chapters.length}</footer>
+          </div>
+        </div>
       </div>
 
-      {/* Navigation — LTR layout: prev on left, next on right */}
+      {/* Navigation */}
       <nav className="fp-reader__nav" dir="ltr">
         <button
           className="fp-btn"
-          onMouseDown={handlePrev}
+          onClick={goPrev}
           disabled={currentPage === 0}
           aria-label="פרק קודם"
         >
@@ -165,7 +107,7 @@ export function FlipBookReader() {
             <li key={ch.id}>
               <button
                 className={`fp-dot${i === currentPage ? ' fp-dot--active' : ''}`}
-                onMouseDown={(e) => handleGoTo(e, i)}
+                onClick={() => goTo(i, currentPage)}
                 aria-label={`פרק ${i + 1}`}
               />
             </li>
@@ -174,7 +116,7 @@ export function FlipBookReader() {
 
         <button
           className="fp-btn"
-          onMouseDown={handleNext}
+          onClick={goNext}
           disabled={currentPage === chapters.length - 1}
           aria-label="פרק הבא"
         >
