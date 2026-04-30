@@ -1,0 +1,43 @@
+/* ─────────────────────────────────────────
+   Mode switcher — segmented control
+───────────────────────────────────────── */
+.mode-switcher {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 999;
+  display: inline-flex;
+  background: rgba(30, 27, 24, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+
+.mode-switcher__btn {
+  font-family: 'Assistant', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 13px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.mode-switcher__btn:hover:not(.mode-switcher__btn--active) {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+}
+
+.mode-switcher__btn--active {
+  background: #4f46e5;
+  color: #fff;
+  box-shadow: 0 1px 6px rgba(79,70,229,0.4);
+}
