@@ -73,25 +73,26 @@ export function FlipBookReader() {
     if (isGallery) return (
       <>{gallery}<div className="fp-page__body">{paragraphs}</div></>
     );
-    if (isFloat) return (
-      <div className="fp-page__body fp-page__body--float">
-        {singleImg(layout === 'imageFloatRight' ? 'fp-float-right' : 'fp-float-left')}
-        {paragraphs}
-      </div>
-    );
-    if (isRow) return (
-      <div className="fp-page__row">
-        {layout === 'imageLeft' && <div className="fp-page__images fp-page__images--side">{singleImg()}</div>}
-        <div className="fp-page__body">{paragraphs}</div>
-        {layout === 'imageRight' && <div className="fp-page__images fp-page__images--side">{singleImg()}</div>}
-      </div>
-    );
     if (layout === 'imageBottom') return (
       <><div className="fp-page__body">{paragraphs}</div><div className="fp-page__images">{singleImg()}</div></>
     );
-    // imageTop (default)
-    return (
+    if (layout === 'imageTop') return (
       <><div className="fp-page__images">{singleImg()}</div><div className="fp-page__body">{paragraphs}</div></>
+    );
+    // imageFloatRight / imageRight → float right
+    // imageFloatLeft  / imageLeft  → float left
+    const floatDir = (layout === 'imageFloatRight' || layout === 'imageRight') ? 'right' : 'left';
+    return (
+      <article className={`chapter-content layout-float-${floatDir}`}>
+        <img
+          src={images[0]}
+          alt={chapter.imageAlt ?? ''}
+          className="chapter-float-image"
+          loading="lazy"
+          draggable={false}
+        />
+        <div className="chapter-text">{paragraphs}</div>
+      </article>
     );
   };
 
