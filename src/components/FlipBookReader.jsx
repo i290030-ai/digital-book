@@ -5,6 +5,8 @@ import './FlipBookReader.css';
 const chapters = chaptersData;
 const FLIP_MS = 480;
 
+const LAYOUTS = ['imageTop', 'imageFloatRight', 'imageBottom', 'imageFloatLeft', 'imageRight', 'imageLeft'];
+
 // ─── FlipBookReader — CSS-animated page flip, no react-pageflip ──────────────
 export function FlipBookReader() {
   const [currentPage, setCurrentPage] = useState(0);
@@ -40,6 +42,58 @@ export function FlipBookReader() {
 
   const chapter = chapters[currentPage];
   const images = chapter.images ?? (chapter.image ? [chapter.image] : []);
+  const layout = images.length > 0 ? LAYOUTS[currentPage % LAYOUTS.length] : 'imageTop';
+  const isGallery = images.length > 1;
+  const isFloat = !isGallery && (layout === 'imageFloatRight' || layout === 'imageFloatLeft');
+  const isRow   = !isGallery && (layout === 'imageRight'      || layout === 'imageLeft');
+
+  const paragraphs = chapter.body.split('\n\n').map((para, i) => (
+    <p key={i} className="fp-page__paragraph">{para}</p>
+  ));
+
+  const singleImg = (cls = '') => (
+    <img
+      src={images[0]}
+      alt={chapter.imageAlt ?? ''}
+      className={`fp-page__image ${cls}`.trim()}
+      loading="lazy"
+      draggable={false}
+    />
+  );
+
+  const gallery = (
+    <div className="fp-page__gallery">
+      {images.map((src, i) => (
+        <img key={i} src={src} alt={chapter.imageAlt ?? ''} className="fp-page__image" loading="lazy" draggable={false} />
+      ))}
+    </div>
+  );
+
+  const renderBody = () => {
+    if (isGallery) return (
+      <>{gallery}<div className="fp-page__body">{paragraphs}</div></>
+    );
+    if (isFloat) return (
+      <div className="fp-page__body fp-page__body--float">
+        {singleImg(layout === 'imageFloatRight' ? 'fp-float-right' : 'fp-float-left')}
+        {paragraphs}
+      </div>
+    );
+    if (isRow) return (
+      <div className="fp-page__row">
+        {layout === 'imageLeft' && <div className="fp-page__images fp-page__images--side">{singleImg()}</div>}
+        <div className="fp-page__body">{paragraphs}</div>
+        {layout === 'imageRight' && <div className="fp-page__images fp-page__images--side">{singleImg()}</div>}
+      </div>
+    );
+    if (layout === 'imageBottom') return (
+      <><div className="fp-page__body">{paragraphs}</div><div className="fp-page__images">{singleImg()}</div></>
+    );
+    // imageTop (default)
+    return (
+      <><div className="fp-page__images">{singleImg()}</div><div className="fp-page__body">{paragraphs}</div></>
+    );
+  };
 
   return (
     <div className="fp-reader" dir="ltr">
@@ -63,26 +117,7 @@ export function FlipBookReader() {
               <div className="fp-page__divider" />
             </header>
 
-            {images.length > 0 && (
-              <div className="fp-page__images">
-                {images.map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt={chapter.imageAlt ?? ''}
-                    className="fp-page__image"
-                    loading="lazy"
-                    draggable={false}
-                  />
-                ))}
-              </div>
-            )}
-
-            <div className="fp-page__body">
-              {chapter.body.split('\n\n').map((para, i) => (
-                <p key={i} className="fp-page__paragraph">{para}</p>
-              ))}
-            </div>
+            {renderBody()}
 
             <footer className="fp-page__footer">{currentPage + 1} / {chapters.length}</footer>
           </div>
