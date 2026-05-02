@@ -13,34 +13,17 @@ export function FlipBookReader() {
 
   const progress = ((currentPage + 1) / chapters.length) * 100;
 
-  const goNext = useCallback(() => {
-    if (currentPage >= chapters.length - 1 || isAnimating) return;
-    setIsAnimating(true);
-    setFlipDir('next');
-    setTimeout(() => {
-      setCurrentPage(p => Math.min(p + 1, chapters.length - 1));
-      setIsAnimating(false);
-      setFlipDir(null);
-    }, FLIP_MS);
-  }, [currentPage, isAnimating]);
+  const goToPage = useCallback((targetIndex) => {
+    if (isAnimating) return;
+    if (targetIndex < 0 || targetIndex >= chapters.length) return;
+    if (targetIndex === currentPage) return;
 
-  const goPrev = useCallback(() => {
-    if (currentPage <= 0 || isAnimating) return;
+    const direction = targetIndex < currentPage ? 'prev' : 'next';
     setIsAnimating(true);
-    setFlipDir('prev');
-    setTimeout(() => {
-      setCurrentPage(p => Math.max(p - 1, 0));
-      setIsAnimating(false);
-      setFlipDir(null);
-    }, FLIP_MS);
-  }, [currentPage, isAnimating]);
+    setFlipDir(direction);
 
-  const goTo = useCallback((i) => {
-    if (isAnimating || i === currentPage) return;
-    setIsAnimating(true);
-    setFlipDir(i > currentPage ? 'next' : 'prev');
     setTimeout(() => {
-      setCurrentPage(i);
+      setCurrentPage(targetIndex);
       setIsAnimating(false);
       setFlipDir(null);
     }, FLIP_MS);
@@ -48,12 +31,12 @@ export function FlipBookReader() {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowRight') goNext();
-      if (e.key === 'ArrowLeft')  goPrev();
+      if (e.key === 'ArrowRight') goToPage(currentPage + 1);
+      if (e.key === 'ArrowLeft')  goToPage(currentPage - 1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev]);
+  }, [goToPage, currentPage]);
 
   const chapter = chapters[currentPage];
   const images = chapter.images ?? (chapter.image ? [chapter.image] : []);
@@ -110,7 +93,7 @@ export function FlipBookReader() {
       <nav className="fp-reader__nav" dir="ltr">
         <button
           className="fp-btn"
-          onClick={goPrev}
+          onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 0 || isAnimating}
           aria-label="פרק קודם"
         >
@@ -122,7 +105,7 @@ export function FlipBookReader() {
             <li key={ch.id}>
               <button
                 className={`fp-dot${i === currentPage ? ' fp-dot--active' : ''}`}
-                onClick={() => goTo(i)}
+                onClick={() => goToPage(i)}
                 aria-label={`פרק ${i + 1}`}
               />
             </li>
@@ -131,7 +114,7 @@ export function FlipBookReader() {
 
         <button
           className="fp-btn"
-          onClick={goNext}
+          onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === chapters.length - 1 || isAnimating}
           aria-label="פרק הבא"
         >
